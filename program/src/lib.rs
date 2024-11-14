@@ -16,3 +16,10 @@ fn process_instruction(
 
     Ok(())
 }
+
+#[no_mangle]
+fn custom_panic(info: &core::panic::PanicInfo<'_>) {
+    
+}
+
+// 17kb => 5.7kb

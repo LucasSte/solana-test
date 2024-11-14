@@ -6,7 +6,10 @@ edition = "2021"
 [dependencies]
 borsh = "0.9.3"
 borsh-derive = "0.9.1"
-solana-program = "1.16.10"
+solana-program = { path = "/Users/lucasste/Documents/agave/sdk/program" }
 
 [lib]
-crate-type = ["cdylib", "lib"]
+crate-type = ["cdylib"]
+
+[features]
+custom-panic = []
