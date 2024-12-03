@@ -20,45 +20,53 @@ fn process_instruction(
 ) -> ProgramResult {
 
     // let a = instruction_data[85034];
-    // let a : Option<u64> = None;
-    // let b = a.unwrap();
+    let a : Option<u64> = None;
+    let b = a.unwrap();
     Ok(())
 }
 
 // 11k => 11536 bytes
 // 12k => 12896 bytes
 // No vec:
-// 12k  => 12624 bytes
+// 12k  => 12704 bytes
 
 #[no_mangle]
 fn custom_panic(info: &core::panic::PanicInfo<'_>) {
     if let Some(loc) = info.location() {
         let filename = loc.file().as_bytes();
-        let mut msg_line = vec![32; filename.len() + 50];
-    
-        let panic_str = "Panicked at: ".as_bytes();
+        let mut msg_line : [u8; 1000] = [32; 1000];
+
         let dst = msg_line.as_mut_ptr();
         unsafe {
-            let src = panic_str.as_ptr();
+            let panic_str = "PANICKED AT:".as_bytes();
+            solana_program::syscalls::sol_log_(panic_str.as_ptr(), panic_str.len() as u64);
+            solana_program::syscalls::sol_log_(filename.as_ptr(), filename.len() as u64);
+
+            let line = "Line: ".as_bytes();
+            let src = line.as_ptr();
             std::ptr::copy_nonoverlapping(
                 src,
                 dst,
-                panic_str.len(),
+                line.len(),
             );
 
-            let dst = dst.add(panic_str.len());
-            let src = filename.as_ptr();
-            std::ptr::copy_nonoverlapping(
-                src,
-                dst,
-                filename.len(),
-            );
-
-            let dst = dst.add(filename.len());
+            let dst = dst.add(line.len());
             let written_bytes = write_num(loc.line(), dst);
             let dst = dst.add(written_bytes);
-            let written_bytes = write_num(loc.column(), dst);
+            *dst = 32;
+
+            let dst = dst.add(1);
+            let col = "Column: ".as_bytes();
+            let src = col.as_ptr();
+            std::ptr::copy_nonoverlapping(
+                src,
+                dst,
+                col.len(),
+            );
             
+            let dst = dst.add(col.len());
+            let written_bytes = write_num(loc.column(), dst);
+
             let line_len = dst.add(written_bytes).offset_from(msg_line.as_ptr()) as usize;
             solana_program::syscalls::sol_log_(msg_line.as_ptr(), line_len as u64);
         }
@@ -82,8 +90,6 @@ unsafe fn write_num(mut num: u32, dst: *mut u8) -> usize{
         *write_ptr = (num % 10) as u8 + 48;
         num /= 10;
     }
-    *dst = 58;
-    let dst = dst.add(1);
     let len = init_ptr.offset_from(write_ptr) as usize;
     std::ptr::copy_nonoverlapping(
         write_ptr,
