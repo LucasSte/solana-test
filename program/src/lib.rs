@@ -61,13 +61,15 @@ fn custom_panic(info: &core::panic::PanicInfo<'_>) {
             
             let line_len = dst.add(written_bytes).offset_from(msg_line.as_ptr()) as usize;
             solana_program::syscalls::sol_log_(msg_line.as_ptr(), line_len as u64);
-
-            if let Some(Some(mm)) = info.message().map(|mes| mes.as_str()) {
-                let mes = mm.as_bytes();
-                solana_program::syscalls::sol_log_(mes.as_ptr(), mes.len() as u64);
-            }
         }
-    } 
+    }
+    
+    if let Some(Some(mm)) = info.message().map(|mes| mes.as_str()) {
+        let mes = mm.as_bytes();
+        unsafe {
+            solana_program::syscalls::sol_log_(mes.as_ptr(), mes.len() as u64);
+        }
+    }
 }
 
 #[inline(never)]
