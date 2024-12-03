@@ -19,82 +19,70 @@ fn process_instruction(
     instruction_data: &[u8],
 ) -> ProgramResult {
 
-    let a = instruction_data[20545];
-
     Ok(())
 }
 
+// 11k => 11536 bytes
+// 13k => 12912 bytes
+// No vec:
+// 12k  => 12616 bytes
+
 #[no_mangle]
 fn custom_panic(info: &core::panic::PanicInfo<'_>) {
-    let loc = info.location().unwrap();
-    let filename = loc.file();
-    let mut msg_line  = vec![32; filename.len() + 30];
-    let start_p = "Panicked at :";
-    let dst = msg_line.as_mut_ptr();
-    let mut num : [u8; 10] = [0; 10];
-    unsafe {
-        let src = start_p.as_ptr();
-        std::ptr::copy_nonoverlapping(
-            src,
-            dst,
-            start_p.len()
-        );
-    }
-    unsafe {
-        let dst = dst.add(14);
-        let src = filename.as_ptr();
-        std::ptr::copy_nonoverlapping(
-            src,
-            dst,
-            filename.len()
-        );
-    }
-
-    let start = convert(&mut num, loc.line());
-    unsafe {
-        let dst = dst.add(filename.len()+14);
-        *dst = 58;
-        let dst = dst.add(1);
-        let src = num.as_ptr().add(start);
-        std::ptr::copy_nonoverlapping(
-            src,
-            dst,
-            10 - start,
-        );
-    }
-
-    let start = convert(&mut num, loc.column());
-    unsafe {
-        let dst = dst.add(filename.len()+25-start);
-        *dst = 58;
-        let dst = dst.add(1);
-        let src = num.as_ptr().add(start);
-        std::ptr::copy_nonoverlapping(
-            src,
-            dst,
-            10 - start,
-        );
-    }
-
-    unsafe {
-        solana_program::syscalls::sol_log_(msg_line.as_ptr(), msg_line.len() as u64);
-    }
-
-    if let Some(Some(mm)) = info.message().map(|mes| mes.as_str()) {
+    if let Some(loc) = info.location() {
+        let filename = loc.file().as_bytes();
+        let mut msg_line = vec![32; filename.len() + 25];
+    
+        let panic_str = "Panicked at: ".as_bytes();
+        let dst = msg_line.as_mut_ptr();
         unsafe {
-            solana_program::syscalls::sol_log_(mm.as_ptr(), mm.len() as u64);
-        }   
-    }
+            let src = panic_str.as_ptr();
+            std::ptr::copy_nonoverlapping(
+                src,
+                dst,
+                panic_str.len(),
+            );
+
+            let dst = dst.add(panic_str.len());
+            let src = filename.as_ptr();
+            std::ptr::copy_nonoverlapping(
+                src,
+                dst,
+                filename.len(),
+            );
+
+            let dst = dst.add(filename.len());
+            let written_bytes = write_num(loc.line(), dst);
+            let dst = dst.add(written_bytes);
+            let _ = write_num(loc.column(), dst);
+
+            solana_program::syscalls::sol_log_(msg_line.as_ptr(), msg_line.len() as u64);
+
+            if let Some(Some(mm)) = info.message().map(|mes| mes.as_str()) {
+                let mes = mm.as_bytes();
+                solana_program::syscalls::sol_log_(mes.as_ptr(), mes.len() as u64);
+            }
+        }
+    } 
 }
 
 #[inline(never)]
-fn convert(x: &mut [u8; 10], mut val: u32) -> usize {
-    let mut i = 9;
-    while val > 0 {
-        x[i] = (val % 10) as u8 + 48;
-        val /= 10;
-        i -= 1;
+unsafe fn write_num(mut num: u32, dst: *mut u8) -> usize{
+    let mut buf : [u8; 10] = [0; 10];
+    let mut buf_ptr = buf.as_mut_ptr().add(11);
+    while num > 0 {
+        buf_ptr = buf_ptr.sub(1);
+        *buf_ptr = (num % 10) as u8 + 48;
+        num /= 10;
     }
 
-    i + 1
+    *dst = 58;
+    let dst = dst.add(1);
+    let len = buf_ptr.offset_from(buf.as_ptr()) as usize;
+    std::ptr::copy_nonoverlapping(
+        buf_ptr,
+        dst,
+        len,
+    );
+    len + 1
 }
