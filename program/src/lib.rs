@@ -19,19 +19,22 @@ fn process_instruction(
     instruction_data: &[u8],
 ) -> ProgramResult {
 
+    // let a = instruction_data[85034];
+    // let a : Option<u64> = None;
+    // let b = a.unwrap();
     Ok(())
 }
 
 // 11k => 11536 bytes
-// 13k => 12912 bytes
+// 12k => 12896 bytes
 // No vec:
-// 12k  => 12616 bytes
+// 12k  => 12624 bytes
 
 #[no_mangle]
 fn custom_panic(info: &core::panic::PanicInfo<'_>) {
     if let Some(loc) = info.location() {
         let filename = loc.file().as_bytes();
-        let mut msg_line = vec![32; filename.len() + 25];
+        let mut msg_line = vec![32; filename.len() + 50];
     
         let panic_str = "Panicked at: ".as_bytes();
         let dst = msg_line.as_mut_ptr();
@@ -54,9 +57,10 @@ fn custom_panic(info: &core::panic::PanicInfo<'_>) {
             let dst = dst.add(filename.len());
             let written_bytes = write_num(loc.line(), dst);
             let dst = dst.add(written_bytes);
-            let _ = write_num(loc.column(), dst);
-
-            solana_program::syscalls::sol_log_(msg_line.as_ptr(), msg_line.len() as u64);
+            let written_bytes = write_num(loc.column(), dst);
+            
+            let line_len = dst.add(written_bytes).offset_from(msg_line.as_ptr()) as usize;
+            solana_program::syscalls::sol_log_(msg_line.as_ptr(), line_len as u64);
 
             if let Some(Some(mm)) = info.message().map(|mes| mes.as_str()) {
                 let mes = mm.as_bytes();
@@ -69,18 +73,18 @@ fn custom_panic(info: &core::panic::PanicInfo<'_>) {
 #[inline(never)]
 unsafe fn write_num(mut num: u32, dst: *mut u8) -> usize{
     let mut buf : [u8; 10] = [0; 10];
-    let mut buf_ptr = buf.as_mut_ptr().add(11);
+    let init_ptr = buf.as_mut_ptr().add(11);
+    let mut write_ptr = init_ptr;
     while num > 0 {
-        buf_ptr = buf_ptr.sub(1);
-        *buf_ptr = (num % 10) as u8 + 48;
+        write_ptr = write_ptr.sub(1);
+        *write_ptr = (num % 10) as u8 + 48;
         num /= 10;
     }
-
     *dst = 58;
     let dst = dst.add(1);
-    let len = buf_ptr.offset_from(buf.as_ptr()) as usize;
+    let len = init_ptr.offset_from(write_ptr) as usize;
     std::ptr::copy_nonoverlapping(
-        buf_ptr,
+        write_ptr,
         dst,
         len,
     );
