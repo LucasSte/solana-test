@@ -4,12 +4,30 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-borsh = "0.9.3"
-borsh-derive = "0.9.1"
+# borsh = "0.9.3"
+# borsh-derive = "0.9.1"
 solana-program = { path = "/Users/lucasste/Documents/agave/sdk/program" }
+pinocchio-log = "0.1.0"
+# solana-program = "2.0.0"
 
 [lib]
 crate-type = ["cdylib"]
 
 [features]
 custom-panic = []
+
+[patch.crates-io]
+solana-account-info = { path = "/Users/lucasste/Documents/agave/sdk/account-info" }
+solana-borsh = { path = "/Users/lucasste/Documents/agave/sdk/borsh" }
+solana-cpi = { path = "/Users/lucasste/Documents/agave/sdk/cpi" }
+solana-decode-error = { path = "/Users/lucasste/Documents/agave/sdk/decode-error" }
+solana-hash = { path = "/Users/lucasste/Documents/agave/sdk/hash" }
+solana-instruction = { path = "/Users/lucasste/Documents/agave/sdk/instruction" }
+solana-msg = { path = "/Users/lucasste/Documents/agave/sdk/msg" }
+solana-program = { path = "/Users/lucasste/Documents/agave/sdk/program" }
+solana-program-entrypoint = { path = "/Users/lucasste/Documents/agave/sdk/program-entrypoint" }
+solana-program-error = { path = "/Users/lucasste/Documents/agave/sdk/program-error" }
+solana-program-option = { path = "/Users/lucasste/Documents/agave/sdk/program-option" }
+solana-program-pack = { path = "/Users/lucasste/Documents/agave/sdk/program-pack" }
+solana-pubkey = { path = "/Users/lucasste/Documents/agave/sdk/pubkey" }
+solana-sha256-hasher = { path = "/Users/lucasste/Documents/agave/sdk/sha256-hasher" }
