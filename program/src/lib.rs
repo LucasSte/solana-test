@@ -1,6 +1,6 @@
 #![feature(panic_info_message)]
 
-use pinocchio_log::logger::Logger;
+use pinocchio_log::logger::{Argument, Logger};
 use solana_program::{
     account_info::AccountInfo,
     entrypoint,
@@ -34,14 +34,7 @@ fn custom_panic(info: &core::panic::PanicInfo<'_>) {
 
         logger.append("Panicket at: "); // 13 bytes
         
-        let trunc_name = if filename.as_bytes().len() > MAX_LEN {
-            logger.append("...");
-            &filename[(filename.as_bytes().len() - MAX_LEN)..]
-        } else {
-            &filename[..]
-        };
-
-        logger.append(trunc_name);
+        logger.append_with_args(filename, &[Argument::Precision(MAX_LEN as u8)]);
 
         logger.append(":");
         logger.append(loc.line());
