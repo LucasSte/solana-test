@@ -16,7 +16,11 @@ extern "C" {
 
 // memmove
 // 41 CUs total => 41 - 31 = 10 CUs for syscall
-// 
+// 93 CUs total => 93 - 33 = 60 CUs for non-syscall
+
+// memcpy
+// 41 CUs total => 41 - 31 = 10 CUs for syscall
+// 84 CUs total => 84 - 31 = 53 CUs for non-syscall
 
 #[no_mangle]
 pub unsafe extern "C" fn entrypoint(input: *mut u8) -> u64 {
@@ -44,11 +48,17 @@ pub unsafe extern "C" fn entrypoint(input: *mut u8) -> u64 {
     // *a.get_unchecked(3) as u64
     
     // memmove
-   //sol_memmove_(a.as_mut_ptr(), b.as_ptr(), sz as u64);
-   //a[3] as u64
+//    sol_memmove_(a.as_mut_ptr(), b.as_ptr(), sz as u64);
+//    a[3] as u64
    // ---
-   std::ptr::copy(a.as_ptr(), a.as_mut_ptr().add(1), sz as usize);
-   *a.get_unchecked(3) as u64
+//    std::ptr::copy(a.as_ptr(), a.as_mut_ptr().add(1), sz as usize);
+//    *a.get_unchecked(3) as u64
+
+    // memcpy
+    // sol_memcpy_(a.as_mut_ptr(), b.as_ptr(), sz as u64);
+    // a[3] as u64
+    std::ptr::copy_nonoverlapping(a.as_ptr(), b.as_mut_ptr(), sz as usize);
+    *b.get_unchecked(3) as u64
 }
 
 

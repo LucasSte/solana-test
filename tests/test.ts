@@ -87,16 +87,18 @@ import {
     TransactionInstruction,
 } from '@solana/web3.js';
 import * as borsh from 'borsh';
+import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 
 function createKeypairFromFile(path: string): Keypair {
     return Keypair.fromSecretKey(
-        Buffer.from(JSON.parse(require('fs').readFileSync(path, "utf-8")))
+        Buffer.from(JSON.parse(readFileSync(path, "utf-8")))
     )
 };
 
 describe('Create a system account', async () => {
     const connection = new Connection(`http://localhost:8899`, 'confirmed');
-    const payer = createKeypairFromFile(require('os').homedir() + '/.config/solana/id.json');
+    const payer = createKeypairFromFile(homedir() + '/.config/solana/id.json');
     const program = createKeypairFromFile('./program/target/deploy/program-keypair.json');
 
     class Assignable {
