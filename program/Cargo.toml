@@ -4,12 +4,23 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-borsh = "0.9.3"
-borsh-derive = "0.9.1"
-solana-program = { path = "/Users/lucasste/Documents/agave/sdk/program" }
+# solana-account-info = "2.2"
+# solana-pubkey = "2.2"
 
 [lib]
 crate-type = ["cdylib"]
 
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = [
+    'cfg(feature, values("custom-panic", "custom-heap"))'
+]
+
 [features]
 custom-panic = []
+
+# [patch.crates-io]
+# solana-pubkey = { path = "/Users/lucasste/Documents/solana-sdk/pubkey" }
+# solana-instruction = { path = "/Users/lucasste/Documents/solana-sdk/instruction" }
+# solana-sysvar = { path = "/Users/lucasste/Documents/solana-sdk/sysvar" }
+# solana-sysvar-id = { path = "/Users/lucasste/Documents/solana-sdk/sysvar-id" }
